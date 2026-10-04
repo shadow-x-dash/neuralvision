@@ -1,0 +1,19 @@
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# Project specific files that shouldn't be tracked
+dataset/
+trainer.yml
+attendance.csv
+users.json
+
+# OS files
+.DS_Store
+Thumbs.db

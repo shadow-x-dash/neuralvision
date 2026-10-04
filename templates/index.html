@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Face Recognition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-main: #050505;
+            --bg-panel: rgba(20, 20, 22, 0.65);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --accent-primary: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.5);
+            --text-main: #ffffff;
+            --text-muted: #a1a1aa;
+            --success: #10b981;
+            --error: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+            padding: 2rem 5%;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.08), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.08), transparent 25%);
+            animation: bg-shift 15s ease-in-out infinite alternate;
+        }
+
+        @keyframes bg-shift {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 100%; }
+        }
+
+        /* Top Header */
+        header {
+            width: 100%;
+            max-width: 1600px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2.5rem;
+            animation: fade-in-down 0.8s ease-out forwards;
+            position: relative;
+            z-index: 9999;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .brand-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border-radius: 14px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+        }
+
+        .brand-text h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .brand-text p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            font-weight: 300;
+        }
+
+        /* Buttons & Badges */
+        .system-status {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            padding: 10px 20px;
+            border-radius: 50px;
+            backdrop-filter: blur(12px);
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--success);
+            box-shadow: 0 0 12px var(--success);
+            animation: pulse-green 2s infinite;
+        }
+
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+            70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: none;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(-3px);
+        }
+
+        /* Dropdown Menu */
+        .icon-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .icon-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.05);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 55px;
+            right: 0;
+            background: var(--bg-panel);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 0.5rem;
+            min-width: 180px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            display: none;
+            flex-direction: column;
+            z-index: 9999;
+            animation: fade-in-down 0.2s ease-out forwards;
+        }
+
+        .dropdown-menu a {
+            color: var(--text-main);
+            text-decoration: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.95rem;
+            transition: background 0.2s ease;
+        }
+
+        .dropdown-menu a:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--accent-primary);
+        }
+
+        /* Landing Screen */
+        .landing-container {
+            display: flex;
+            gap: 3rem;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            width: 100%;
+            max-width: 1200px;
+            margin-top: 4rem;
+            animation: fade-in-up 0.5s ease-out forwards;
+        }
+
+        .landing-card {
+            background: var(--bg-panel);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 3rem;
+            width: 400px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .landing-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 4px;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.4s ease;
+        }
+
+        .landing-card:hover {
+            transform: translateY(-10px);
+            border-color: rgba(59, 130, 246, 0.3);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.6), 0 0 40px rgba(59, 130, 246, 0.15);
+        }
+
+        .landing-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .landing-card i {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .landing-card h2 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            color: white;
+            justify-content: center;
+        }
+
+        .landing-card p {
+            color: var(--text-muted);
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        /* App Layout */
+        .layout {
+            display: none;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 2rem;
+            width: 100%;
+            max-width: 1600px;
+            animation: fade-in-up 0.5s ease-out forwards;
+        }
+
+        @media (max-width: 1024px) {
+            .layout { grid-template-columns: 1fr; }
+        }
+
+        /* Panels */
+        .panel {
+            background: var(--bg-panel);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4);
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            border-radius: 16px;
+            overflow: hidden;
+            background: #000;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .video-feed {
+            width: 100%;
+            display: block;
+            opacity: 0.9;
+        }
+
+        .scanner-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--accent-primary);
+            box-shadow: 0 0 20px 4px var(--accent-glow);
+            animation: scan 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+            z-index: 10;
+        }
+
+        .oval-guide {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 280px;
+            height: 380px;
+            border: 2px dashed rgba(59, 130, 246, 0.8);
+            border-radius: 50%;
+            box-shadow: 0 0 0 2000px rgba(0,0,0,0.65);
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        @keyframes scan {
+            0% { top: 0; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+
+        /* Forms */
+        h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        h2 i { color: var(--accent-primary); }
+
+        .input-group {
+            margin-bottom: 1.25rem;
+            position: relative;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .input-group input, .input-group select {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            padding: 14px 18px;
+            border-radius: 12px;
+            color: white;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.3s ease;
+            appearance: none;
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .select-wrapper { position: relative; }
+        .select-wrapper::after {
+            content: '\f107';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            right: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        .square-btn {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            width: 80px;
+            height: 80px;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(12px);
+        }
+
+        .square-btn i { font-size: 1.5rem; }
+        .square-btn span { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+
+        .square-btn:hover {
+            transform: translateY(-3px);
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        .square-btn.active {
+            background: rgba(59, 130, 246, 0.15);
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
+        }
+
+        .primary-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .primary-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.5);
+        }
+
+        .primary-btn:disabled {
+            background: rgba(255,255,255,0.05);
+            color: var(--text-muted);
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        /* Progress Bar */
+        .progress-wrapper {
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            width: 0%;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+        }
+
+        .status-msg {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 0.75rem;
+            text-align: center;
+            min-height: 20px;
+        }
+
+        /* Table */
+        .table-container {
+            max-height: 350px;
+            overflow-y: auto;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .table-container::-webkit-scrollbar { width: 6px; }
+        .table-container::-webkit-scrollbar-track { background: transparent; }
+        .table-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th, td { padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        
+        th {
+            background: rgba(255,255,255,0.02);
+            position: sticky; top: 0;
+            font-weight: 500; color: var(--text-muted);
+            font-size: 0.85rem; text-transform: uppercase;
+            letter-spacing: 1px; backdrop-filter: blur(10px); z-index: 5;
+        }
+        
+        tr:hover { background: rgba(255,255,255,0.03); }
+        .time-badge {
+            background: rgba(59, 130, 246, 0.1); color: #93c5fd;
+            padding: 4px 10px; border-radius: 20px;
+            font-size: 0.8rem; border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        @keyframes fade-in-down { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fade-in-up { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">
+            <div class="brand-icon">
+                <i class="fa-solid fa-microchip"></i>
+            </div>
+            <div class="brand-text">
+                <h1>Neural Vision</h1>
+                <p>AI Face Recognition & Attendance</p>
+            </div>
+        </div>
+        
+        <div style="display: flex; gap: 15px; align-items: center;">
+            <button id="backBtn" class="back-btn" onclick="showLanding()">
+                <i class="fa-solid fa-arrow-left"></i> Back to Menu
+            </button>
+            <div class="system-status">
+                <div class="status-dot"></div>
+                <span style="font-size: 0.9rem; font-weight: 500;">System Online</span>
+            </div>
+            <div style="position: relative;">
+                <button class="icon-btn" onclick="toggleMenu()">
+                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                </button>
+                <div id="dropdownMenu" class="dropdown-menu">
+                    <a href="#" onclick="event.preventDefault(); startApp('attendance'); toggleMenu();"><i class="fa-solid fa-clipboard-check"></i> Real-time Log</a>
+                    <a href="#" onclick="event.preventDefault(); startApp('report'); toggleMenu();"><i class="fa-solid fa-chart-pie"></i> Daily Report</a>
+                    <a href="#" onclick="event.preventDefault(); startApp('manage'); toggleMenu();"><i class="fa-solid fa-database"></i> Manage Data</a>
+                    <a href="#" onclick="event.preventDefault(); startApp('about'); toggleMenu();"><i class="fa-solid fa-circle-info"></i> About</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- LANDING VIEW -->
+    <div id="landing-view" class="landing-container">
+        <div class="landing-card" onclick="startApp('attendance')">
+            <i class="fa-solid fa-users-viewfinder"></i>
+            <h2>Take Attendance</h2>
+            <p>Start live camera feed to automatically track and log attendance of registered subjects in real-time.</p>
+        </div>
+    </div>
+
+    <!-- ADMIN AUTH MODAL -->
+    <div id="adminModal" class="modal-backdrop" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(5px);">
+        <div class="panel" style="width: 350px; text-align: center; animation: fade-in-up 0.3s ease-out;">
+            <i class="fa-solid fa-lock" style="font-size: 2.5rem; color: var(--accent-primary); margin-bottom: 1rem;"></i>
+            <h2 style="justify-content: center; margin-bottom: 0.5rem;">Admin Access</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">Please enter the admin password to manage data.</p>
+            <div class="input-group" style="text-align: left;">
+                <input type="password" id="adminPassword" placeholder="Enter Password" onkeypress="if(event.key === 'Enter') verifyAdmin()" />
+            </div>
+            <p id="adminError" style="color: var(--error); font-size: 0.85rem; margin-bottom: 1rem; display: none;">Incorrect password!</p>
+            <div style="display: flex; gap: 10px;">
+                <button class="back-btn" style="display: block; flex: 1; text-align: center;" onclick="closeAdminModal()">Cancel</button>
+                <button class="primary-btn" style="flex: 1; padding: 10px;" onclick="verifyAdmin()">Unlock</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP VIEW (Hidden initially) -->
+    <div id="main-app" class="layout">
+        <!-- Shared Video Panel -->
+        <div id="panel-video" class="panel" style="padding: 1.5rem;">
+            <h2><i class="fa-solid fa-camera"></i> Live Scanner</h2>
+            <div class="video-container">
+                <video id="videoElement" autoplay playsinline style="display:none;"></video>
+                <canvas id="canvasElement" style="display:none;"></canvas>
+                <img id="videoStream" src="" class="video-feed" alt="Camera Initialization..." />
+            </div>
+        </div>
+
+        <div class="controls-col" style="display: flex; flex-direction: column; gap: 2rem;">
+            
+            <!-- ATTENDANCE PANEL -->
+            <div id="panel-attendance" class="panel" style="display: none; flex: 1;">
+                <h2><i class="fa-solid fa-clipboard-check"></i> Real-time Log</h2>
+                <div class="table-container" style="max-height: 500px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Identity</th>
+                                <th>Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendanceBody">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- REPORT PANEL -->
+            <div id="panel-report" class="panel" style="display: none; flex: 1;">
+                <h2><i class="fa-solid fa-chart-pie"></i> Daily Report</h2>
+                
+                <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                    <div style="flex: 1; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); padding: 15px; border-radius: 12px; text-align: center;">
+                        <h3 style="color: var(--success); font-size: 2rem;" id="presentCount">0</h3>
+                        <p style="color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; font-weight: 600;">Present</p>
+                    </div>
+                    <div style="flex: 1; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); padding: 15px; border-radius: 12px; text-align: center;">
+                        <h3 style="color: var(--error); font-size: 2rem;" id="absentCount">0</h3>
+                        <p style="color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; font-weight: 600;">Absent</p>
+                    </div>
+                </div>
+
+                <div class="table-container" style="max-height: 400px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Subject Name</th>
+                                <th>Status</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportBody">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- MANAGE DATA PANELS -->
+            <div id="panel-manage" style="display: none; flex-direction: column; gap: 1rem;">
+                
+                <!-- Tab Navigation for Manage Data -->
+                <div style="display: flex; gap: 1rem; justify-content: center; margin-bottom: 1rem;">
+                    <button class="square-btn active" id="tabBtn-register" onclick="switchManageTab('register')">
+                        <i class="fa-solid fa-user-plus"></i>
+                        <span>Register</span>
+                    </button>
+                    <button class="square-btn" id="tabBtn-database" onclick="switchManageTab('database')">
+                        <i class="fa-solid fa-users-gear"></i>
+                        <span>Database</span>
+                    </button>
+                    <button class="square-btn" id="tabBtn-settings" onclick="switchManageTab('settings')">
+                        <i class="fa-solid fa-key"></i>
+                        <span>Settings</span>
+                    </button>
+                </div>
+
+                <!-- Add User Panel -->
+                <div id="tab-register" class="panel">
+                    <h2><i class="fa-solid fa-user-plus"></i> Register Identity</h2>
+                    <div class="input-group">
+                        <label for="newUserName">Subject Name</label>
+                        <input type="text" id="newUserName" placeholder="e.g. John Doe" autocomplete="off" />
+                    </div>
+                    <button id="addFaceBtn" class="primary-btn" onclick="addFace()">
+                        <i class="fa-solid fa-expand"></i> Scan & Register
+                    </button>
+                    
+                    <div class="progress-wrapper" id="progressContainer">
+                        <div class="progress-container">
+                            <div class="progress-bar" id="progressBar"></div>
+                        </div>
+                    </div>
+                    <div class="status-msg" id="captureStatusText"></div>
+                </div>
+
+                <!-- Update User Panel -->
+                <div id="tab-database" class="panel" style="display: none;">
+                    <h2><i class="fa-solid fa-users-gear"></i> Database Records</h2>
+                    <div class="input-group">
+                        <label for="editUserSelect">Select Identity</label>
+                        <div class="select-wrapper">
+                            <select id="editUserSelect" onchange="onUserSelectChange()">
+                                <option value="">-- Access Registry --</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div id="editNameGroup" style="display: none; animation: fade-in-up 0.3s ease;">
+                        <div class="input-group" style="margin-top: 1rem;">
+                            <label for="editUserName">Update Name</label>
+                            <input type="text" id="editUserName" placeholder="Enter new designation" />
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button id="updateUserBtn" class="primary-btn" style="flex: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: white;" onclick="updateUser()">
+                                <i class="fa-solid fa-pen-to-square"></i> Apply Update
+                            </button>
+                            <button id="deleteUserBtn" class="primary-btn" style="flex: 1; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: var(--error);" onclick="deleteUser()">
+                                <i class="fa-solid fa-trash"></i> Delete Data
+                            </button>
+                        </div>
+                    </div>
+                    <div class="status-msg" id="editStatusText"></div>
+                </div>
+
+                <!-- Change Admin Password Panel -->
+                <div id="tab-settings" class="panel" style="display: none;">
+                    <h2><i class="fa-solid fa-key"></i> Change Admin Password</h2>
+                    <div class="input-group">
+                        <label for="newAdminPwd">New Password</label>
+                        <input type="password" id="newAdminPwd" placeholder="Enter new password" />
+                    </div>
+                    <button class="primary-btn" onclick="changeAdminPassword()">
+                        <i class="fa-solid fa-lock"></i> Update Password
+                    </button>
+                    <div class="status-msg" id="pwdStatusText"></div>
+                </div>
+            </div>
+
+            <!-- ABOUT PANEL -->
+            <div id="panel-about" class="panel" style="display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+                <div style="font-size: 3.5rem; color: var(--accent-primary); margin-bottom: 1rem;"><i class="fa-solid fa-microchip"></i></div>
+                <h2 style="justify-content: center; font-size: 1.8rem; margin-bottom: 0.5rem;">Neural Vision</h2>
+                <p style="color: var(--text-muted); font-size: 1rem; margin-bottom: 2.5rem;">AI Face Recognition & Attendance System</p>
+                
+                <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); padding: 2rem; border-radius: 16px; width: 100%;">
+                    <h3 style="font-weight: 500; margin-bottom: 1rem; color: #fff;">Designed & Developed by</h3>
+                    
+                    <!-- Developer Photo Section -->
+                    <div style="margin: 1.5rem 0;">
+                        <!-- You can replace 'developer-photo.jpg' with your actual image file in the 'static' folder -->
+                        <img src="{{ url_for('static', filename='developer-photo.jpg') }}" alt="Dipendra Sah" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid var(--accent-primary); box-shadow: 0 0 15px rgba(59, 130, 246, 0.4); background-color: rgba(255,255,255,0.1);">
+                    </div>
+                    
+                    <p style="font-size: 1.5rem; font-weight: 700; letter-spacing: 1px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Dipendra Sah</p>
+                    <hr style="border: 0; height: 1px; background: rgba(255,255,255,0.05); margin: 1.5rem 0;">
+                    <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6;">
+                        Built with <strong>Python</strong>, <strong>OpenCV</strong>, and <strong>Flask</strong>.<br>
+                        Powered by Local Binary Patterns Histograms (LBPH) Neural Architecture.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // View Routing Logic
+        let attendanceInterval = null;
+        let cameraStream = null;
+        let processingFrame = false;
+        let cameraLoop = null;
+
+        async function startCamera() {
+            try {
+                const video = document.getElementById('videoElement');
+                cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = cameraStream;
+                
+                // Wait for video metadata to load to get dimensions
+                video.onloadedmetadata = () => {
+                    video.play();
+                    if (!cameraLoop) {
+                        cameraLoop = setInterval(processFrame, 150); // ~6.6 FPS
+                    }
+                };
+            } catch (err) {
+                console.error("Camera access denied", err);
+                alert("Camera access is required for this application.");
+            }
+        }
+        
+        function stopCamera() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+            }
+            if (cameraLoop) {
+                clearInterval(cameraLoop);
+                cameraLoop = null;
+            }
+            document.getElementById('videoStream').src = "";
+        }
+
+        async function processFrame() {
+            if (processingFrame) return;
+            
+            const video = document.getElementById('videoElement');
+            if (video.videoWidth === 0) return;
+            
+            processingFrame = true;
+            
+            const canvas = document.getElementById('canvasElement');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Get base64 jpeg
+            const base64Img = canvas.toDataURL('image/jpeg', 0.8);
+            
+            try {
+                const response = await fetch('/process_frame', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: base64Img })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.image) {
+                        document.getElementById('videoStream').src = data.image;
+                    }
+                }
+            } catch (err) {
+                // Ignore errors for individual frames
+            } finally {
+                processingFrame = false;
+            }
+        }
+
+        function startApp(mode) {
+            document.getElementById('landing-view').style.display = 'none';
+            document.getElementById('main-app').style.display = 'grid';
+            document.getElementById('backBtn').style.display = 'flex';
+            
+            // Reset layout overrides
+            document.getElementById('main-app').style.gridTemplateColumns = '';
+            document.getElementById('panel-video').style.display = 'block';
+            document.getElementById('panel-video').style.maxWidth = '';
+            document.getElementById('panel-video').style.margin = '';
+            
+            // Hide all sub-panels
+            document.getElementById('panel-attendance').style.display = 'none';
+            document.getElementById('panel-manage').style.display = 'none';
+            document.getElementById('panel-about').style.display = 'none';
+            document.getElementById('panel-report').style.display = 'none';
+
+            if (mode !== 'about') {
+                // Turn on camera for sections that need it
+                startCamera();
+            }
+
+            if (mode === 'attendance') {
+                // Center the scanner in attendance mode
+                document.getElementById('main-app').style.gridTemplateColumns = '1fr';
+                document.getElementById('panel-video').style.maxWidth = '800px';
+                document.getElementById('panel-video').style.margin = '0 auto';
+                
+                // Show real-time log below or keep it hidden as requested
+                // document.getElementById('panel-attendance').style.display = 'block';
+            } else if (mode === 'report') {
+                document.getElementById('panel-report').style.display = 'block';
+                
+                // Fetch report and poll every 5 seconds
+                fetchReport();
+                attendanceInterval = setInterval(fetchReport, 5000);
+            } else if (mode === 'manage') {
+                // Show admin modal instead of opening manage directly
+                document.getElementById('adminModal').style.display = 'flex';
+                document.getElementById('adminPassword').value = '';
+                document.getElementById('adminError').style.display = 'none';
+                setTimeout(() => document.getElementById('adminPassword').focus(), 100);
+            } else if (mode === 'about') {
+                document.getElementById('panel-about').style.display = 'flex';
+                
+                // Hide video panel and adjust grid for About section
+                document.getElementById('panel-video').style.display = 'none';
+                document.getElementById('main-app').style.gridTemplateColumns = '1fr';
+                stopCamera();
+                
+                if (attendanceInterval) clearInterval(attendanceInterval);
+            }
+        }
+
+        function showLanding() {
+            document.getElementById('main-app').style.display = 'none';
+            document.getElementById('landing-view').style.display = 'flex';
+            document.getElementById('backBtn').style.display = 'none';
+            
+            stopCamera();
+            
+            if (attendanceInterval) clearInterval(attendanceInterval);
+        }
+
+        // Switch Tabs in Manage Data
+        function switchManageTab(tab) {
+            document.getElementById('tab-register').style.display = 'none';
+            document.getElementById('tab-database').style.display = 'none';
+            document.getElementById('tab-settings').style.display = 'none';
+            document.getElementById('tabBtn-register').classList.remove('active');
+            document.getElementById('tabBtn-database').classList.remove('active');
+            document.getElementById('tabBtn-settings').classList.remove('active');
+            
+            document.getElementById('tab-' + tab).style.display = 'block';
+            document.getElementById('tabBtn-' + tab).classList.add('active');
+
+            if (tab === 'database' || tab === 'settings') {
+                document.getElementById('panel-video').style.display = 'none';
+                document.getElementById('main-app').style.gridTemplateColumns = '1fr';
+                stopCamera(); 
+            } else {
+                document.getElementById('panel-video').style.display = 'block';
+                document.getElementById('main-app').style.gridTemplateColumns = '';
+                startCamera();
+            }
+        }
+
+        function toggleMenu() {
+            const menu = document.getElementById('dropdownMenu');
+            if (menu.style.display === 'flex') {
+                menu.style.display = 'none';
+            } else {
+                menu.style.display = 'flex';
+            }
+        }
+        
+        // Close menu if clicked outside
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('dropdownMenu');
+            const button = document.querySelector('.icon-btn');
+            if (menu && menu.style.display === 'flex' && !menu.contains(event.target) && !button.contains(event.target)) {
+                menu.style.display = 'none';
+            }
+        });
+
+        // Fetch Attendance periodically
+        async function fetchAttendance() {
+            try {
+                const res = await fetch('/attendance_data');
+                const data = await res.json();
+                const tbody = document.getElementById('attendanceBody');
+                tbody.innerHTML = '';
+                
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; color: var(--text-muted); font-size: 0.9rem; padding: 2rem;">No logs found for today</td></tr>';
+                    return;
+                }
+
+                data.forEach(record => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td style="font-weight: 500;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--success);"></div>
+                                ${record.Name}
+                            </div>
+                        </td>
+                        <td><span class="time-badge">${record.Time}</span></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (err) {
+                console.error("Failed to fetch attendance", err);
+            }
+        }
+
+        // Fetch and calculate Daily Report
+        async function fetchReport() {
+            try {
+                // Fetch registered users
+                const resUsers = await fetch('/get_users_list');
+                const users = await resUsers.json();
+                
+                // Fetch attendance records
+                const resAtt = await fetch('/attendance_data');
+                const attendance = await resAtt.json();
+                
+                // Filter for today's date
+                const today = new Date().toISOString().split('T')[0];
+                const presentMap = {};
+                
+                attendance.forEach(record => {
+                    if (record.Time && record.Time.startsWith(today)) {
+                        presentMap[record.Name] = record.Time;
+                    }
+                });
+                
+                const tbody = document.getElementById('reportBody');
+                tbody.innerHTML = '';
+                
+                let presentCount = 0;
+                let absentCount = 0;
+
+                users.forEach(u => {
+                    const tr = document.createElement('tr');
+                    const timeMarked = presentMap[u.name];
+                    
+                    if (timeMarked) {
+                        presentCount++;
+                        tr.innerHTML = `
+                            <td style="font-weight: 500;">${u.name}</td>
+                            <td><span style="color: var(--success); font-weight: 600;"><i class="fa-solid fa-check"></i> Present</span></td>
+                            <td><span class="time-badge">${timeMarked.split(' ')[1] || timeMarked}</span></td>
+                        `;
+                    } else {
+                        absentCount++;
+                        tr.innerHTML = `
+                            <td style="font-weight: 500; color: var(--text-muted);">${u.name}</td>
+                            <td><span style="color: var(--error); font-weight: 600;"><i class="fa-solid fa-xmark"></i> Absent</span></td>
+                            <td><span style="color: var(--text-muted);">-</span></td>
+                        `;
+                    }
+                    tbody.appendChild(tr);
+                });
+                
+                document.getElementById('presentCount').innerText = presentCount;
+                document.getElementById('absentCount').innerText = absentCount;
+                
+            } catch (err) {
+                console.error("Failed to fetch report", err);
+            }
+        }
+
+        // Fetch Users for Edit Dropdown
+        async function fetchUsersList() {
+            try {
+                const res = await fetch('/get_users_list');
+                const users = await res.json();
+                
+                const select = document.getElementById('editUserSelect');
+                select.innerHTML = '<option value="">-- Access Registry --</option>';
+                
+                users.forEach(u => {
+                    const option = document.createElement('option');
+                    option.value = u.id;
+                    option.textContent = `UID: ${u.id.padStart(3, '0')} - ${u.name}`;
+                    option.dataset.name = u.name;
+                    select.appendChild(option);
+                });
+            } catch (err) {
+                console.error("Failed to fetch users list", err);
+            }
+        }
+        
+        function onUserSelectChange() {
+            const select = document.getElementById('editUserSelect');
+            const editGroup = document.getElementById('editNameGroup');
+            const editNameInput = document.getElementById('editUserName');
+            
+            if (select.value) {
+                editGroup.style.display = 'block';
+                editNameInput.value = select.options[select.selectedIndex].dataset.name;
+            } else {
+                editGroup.style.display = 'none';
+            }
+        }
+        
+        async function updateUser() {
+            const select = document.getElementById('editUserSelect');
+            const newName = document.getElementById('editUserName').value.trim();
+            const statusText = document.getElementById('editStatusText');
+            
+            if (!select.value || !newName) {
+                statusText.innerText = "Please provide valid inputs.";
+                statusText.style.color = "var(--error)";
+                return;
+            }
+            
+            try {
+                const res = await fetch('/edit_user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: select.value, name: newName })
+                });
+                
+                const data = await res.json();
+                
+                if (data.status === 'success') {
+                    statusText.innerHTML = '<i class="fa-solid fa-check"></i> Registry updated!';
+                    statusText.style.color = "var(--success)";
+                    fetchUsersList(); 
+                    setTimeout(() => { statusText.innerText = ""; }, 3000);
+                } else {
+                    statusText.innerText = data.message;
+                    statusText.style.color = "var(--error)";
+                }
+            } catch (err) {
+                statusText.innerText = "Connection failure.";
+                statusText.style.color = "var(--error)";
+            }
+        }
+
+        // Add Face Function
+        async function addFace() {
+            const name = document.getElementById('newUserName').value.trim();
+            const frames = 50; // Increased from 10 for better accuracy
+            const btn = document.getElementById('addFaceBtn');
+            const statusText = document.getElementById('captureStatusText');
+            
+            if (!name) {
+                statusText.innerText = "Subject name is required.";
+                statusText.style.color = "var(--error)";
+                setTimeout(() => { statusText.innerText = ""; }, 3000);
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Initializing...';
+            statusText.innerText = "";
+
+            try {
+                const res = await fetch('/add_user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, frames })
+                });
+                
+                const data = await res.json();
+                
+                if (data.status === 'success') {
+                    document.getElementById('progressContainer').style.display = 'block';
+                    pollCaptureStatus();
+                } else {
+                    statusText.innerText = data.message;
+                    statusText.style.color = "var(--error)";
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-expand"></i> Scan & Register';
+                }
+            } catch (err) {
+                statusText.innerText = "System error.";
+                statusText.style.color = "var(--error)";
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-expand"></i> Scan & Register';
+            }
+        }
+
+        // Poll Capture Status
+        async function pollCaptureStatus() {
+            const interval = setInterval(async () => {
+                try {
+                    const res = await fetch('/capture_status');
+                    const data = await res.json();
+                    
+                    const btn = document.getElementById('addFaceBtn');
+                    const statusText = document.getElementById('captureStatusText');
+                    const progressBar = document.getElementById('progressBar');
+                    
+                    if (data.capture_mode) {
+                        let instruction = "Look straight at the camera";
+                        let percentage = data.capture_count / data.capture_total;
+                        
+                        if (percentage < 0.2) {
+                            instruction = "Look STRAIGHT";
+                        } else if (percentage < 0.4) {
+                            instruction = "Turn LEFT";
+                        } else if (percentage < 0.6) {
+                            instruction = "Turn RIGHT";
+                        } else if (percentage < 0.8) {
+                            instruction = "Tilt UP";
+                        } else {
+                            instruction = "Tilt DOWN";
+                        }
+                        
+                        if (data.capture_paused) {
+                            btn.disabled = false;
+                            btn.innerHTML = `<i class="fa-solid fa-play"></i> Next: ${instruction}`;
+                            btn.onclick = resumeCapture;
+                            statusText.innerHTML = `<strong>PAUSED</strong> <br/> <span style="font-size: 0.8rem; color: #a1a1aa;">Click button to capture ${instruction} profile.</span>`;
+                        } else {
+                            btn.disabled = true;
+                            btn.innerHTML = '<i class="fa-solid fa-camera"></i> Scanning...';
+                            statusText.innerHTML = `<strong>${instruction}</strong> <br/> <span style="font-size: 0.8rem; color: #a1a1aa;">Progress: ${data.capture_count} / ${data.capture_total} frames</span>`;
+                        }
+                        
+                        progressBar.style.width = `${(data.capture_count / data.capture_total) * 100}%`;
+                    } else {
+                        clearInterval(interval);
+                        btn.innerHTML = '<i class="fa-solid fa-expand"></i> Scan & Register';
+                        btn.disabled = false;
+                        btn.onclick = addFace;
+                        document.getElementById('newUserName').value = '';
+                        progressBar.style.width = `100%`;
+                        statusText.innerHTML = '<span style="color:var(--success)"><i class="fa-solid fa-check"></i> Biometrics captured. Model compiled.</span>';
+                        
+                        fetchUsersList(); 
+                        
+                        setTimeout(() => {
+                            document.getElementById('progressContainer').style.display = 'none';
+                            progressBar.style.width = `0%`;
+                            statusText.innerText = "";
+                        }, 5000);
+                    }
+                } catch (err) {
+                    console.error("Error polling capture status", err);
+                }
+            }, 500); 
+        }
+
+        async function resumeCapture() {
+            const btn = document.getElementById('addFaceBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Resuming...';
+            try {
+                await fetch('/resume_capture', { method: 'POST' });
+            } catch(e) {}
+        }
+
+        // Delete User Data
+        async function deleteUser() {
+            const select = document.getElementById('editUserSelect');
+            const statusText = document.getElementById('editStatusText');
+            
+            if (!select.value) {
+                statusText.innerText = "Please select a user to delete.";
+                statusText.style.color = "var(--error)";
+                return;
+            }
+            
+            if (!confirm("Are you sure you want to delete this user and all their facial data? This cannot be undone.")) return;
+            
+            try {
+                const res = await fetch('/delete_user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: select.value })
+                });
+                
+                const data = await res.json();
+                
+                if (data.status === 'success') {
+                    statusText.innerHTML = '<i class="fa-solid fa-check"></i> ' + data.message;
+                    statusText.style.color = "var(--success)";
+                    document.getElementById('editNameGroup').style.display = 'none';
+                    fetchUsersList(); 
+                    setTimeout(() => { statusText.innerText = ""; }, 5000);
+                } else {
+                    statusText.innerText = data.message;
+                    statusText.style.color = "var(--error)";
+                }
+            } catch (err) {
+                statusText.innerText = "Connection failure.";
+                statusText.style.color = "var(--error)";
+            }
+        }
+
+        // Admin Auth Functions
+        let ADMIN_PASSWORD = localStorage.getItem('admin_pwd') || "admin"; // Default password
+
+        function changeAdminPassword() {
+            const newPwd = document.getElementById('newAdminPwd').value.trim();
+            const statusText = document.getElementById('pwdStatusText');
+            if (!newPwd) {
+                statusText.innerText = "Password cannot be empty.";
+                statusText.style.color = "var(--error)";
+                return;
+            }
+            ADMIN_PASSWORD = newPwd;
+            localStorage.setItem('admin_pwd', newPwd);
+            
+            statusText.innerHTML = '<i class="fa-solid fa-check"></i> Password updated successfully!';
+            statusText.style.color = "var(--success)";
+            document.getElementById('newAdminPwd').value = '';
+            
+            setTimeout(() => { statusText.innerText = ""; }, 3000);
+        }
+
+        function closeAdminModal() {
+            document.getElementById('adminModal').style.display = 'none';
+            // Return to landing view if they cancel the login
+            showLanding();
+        }
+
+        function verifyAdmin() {
+            const pwd = document.getElementById('adminPassword').value;
+            if (pwd === ADMIN_PASSWORD) {
+                // Success! Close modal and show manage panel
+                document.getElementById('adminModal').style.display = 'none';
+                document.getElementById('panel-manage').style.display = 'flex';
+                document.getElementById('panel-attendance').style.display = 'none';
+                document.getElementById('panel-about').style.display = 'none';
+                document.getElementById('panel-report').style.display = 'none';
+                
+                // Stop attendance polling to save resources
+                if (attendanceInterval) clearInterval(attendanceInterval);
+                
+                fetchUsersList();
+            } else {
+                // Fail
+                document.getElementById('adminError').style.display = 'block';
+                document.getElementById('adminPassword').value = '';
+                document.getElementById('adminPassword').focus();
+            }
+        }
+    </script>
+</body>
+</html>
